@@ -2,7 +2,7 @@
 ### Code is divided up by examples (Lorenz96, HBDT, SST)
 ### Contact information: jb2467@rit.edu
 
-![Poster from RIT undergraduate research symposium 7/31/2025](RQA+DMD poster-3.png)
+![Poster from RIT undergraduate research symposium 7/31/2025](<RQA+DMD poster-3.png>)
 
 
 
