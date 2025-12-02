@@ -36,15 +36,16 @@ def count_line_lengths(binary_matrix, direction='diagonal'):
 
 def rqa_metrics(recurrence_matrix, l_min=2, v_min=2):
   R = np.array(recurrence_matrix, dtype=int)
+  N = recurrence_matrix.shape[0]
   total_rec_points = R.sum()
   diag_lines = count_line_lengths(R, direction='diagonal')
   vert_lines = count_line_lengths(R, direction='vertical')
     # DET
   det_numer = sum(l * count for l, count in diag_lines.items() if l >= l_min)
-  DET = det_numer / total_rec_points if total_rec_points > 0 else 0
+  DET = det_numer / (sum(l * count for l, count in diag_lines.items() if l >= 1))
     # LAM
   lam_numer = sum(v * count for v, count in vert_lines.items() if v >= v_min)
-  LAM = lam_numer / total_rec_points if total_rec_points > 0 else 0
+  LAM = lam_numer / sum(v * count for v, count in vert_lines.items() if v >= 1)
     # ENTR
   diag_filtered = {l: c for l, c in diag_lines.items() if l >= l_min}
   total_lines = sum(diag_filtered.values())
@@ -125,31 +126,32 @@ def distance(all_vectors, metric='euclidean'):
 
 
 # Test this more
-def RecurrencePlot(all_vectors, percent, metric = 'euclidean', q=1, v_min=2 , l_min =2, globalEpsilon = True, Title = '', lines= False):
+# Need shape of time by space! (n,m)
+def RecurrencePlot(all_vectors, percent, metric = 'euclidean', q=1, v_min=2 , l_min =2, globalEpsilon = True, Title = '', lines= False,plot = False):
     temp = all_vectors.copy()
-    temp = downsample(temp,q)
+#    temp = downsample(temp,q)
     distance_matrix = distance(temp, metric = metric)
     metrics = 0 
     if globalEpsilon:
         epsilon = np.percentile(distance_matrix,percent )
-        print(f"epsilon = {epsilon:.3f}")
         R = (distance_matrix <= epsilon)
         np.fill_diagonal(R, 0)
         metrics = rqa_metrics(R, l_min=l_min, v_min=v_min)
-        np.fill_diagonal(R, 1)
-        plt.figure(figsize=(10, 10))
-        plt.imshow(R, origin='lower', cmap='binary')
-        if lines:       
-            plt.axvline(165, color='red', linestyle='dotted', label='1st Regime change')
-            plt.axvline(286, color='red', linestyle='dotted', label='2nd Regime change')
-            plt.axvline(376, color='red', linestyle='dotted', label='3rd Regime change')
-            plt.axvline(501, color='red', linestyle='dotted', label='4th Regime change')
-            plt.axvline(751, color='red', linestyle='dotted', label='5th Regime change')
-        plt.title(f"{Title} \nRecurrence Plot (ε = {epsilon:.3f}), RR: {percent/100} \nwith DET:{metrics['DET']:.3f}, LAM:{metrics['LAM']:.3f}, ENTR:{metrics['ENTR']:.3f}", fontsize=16)
-        plt.xlabel('Time index j')
-        plt.ylabel('Time index i')
-        plt.tight_layout()
-        plt.show()
+        if plot:
+            np.fill_diagonal(R, 1)
+            plt.figure(figsize=(10, 10))
+            plt.imshow(R, origin='lower', cmap='binary')
+            if lines:       
+                plt.axvline(165, color='red', linestyle='dotted', label='1st Regime change')
+                plt.axvline(286, color='red', linestyle='dotted', label='2nd Regime change')
+                plt.axvline(376, color='red', linestyle='dotted', label='3rd Regime change')
+                plt.axvline(501, color='red', linestyle='dotted', label='4th Regime change')
+                plt.axvline(751, color='red', linestyle='dotted', label='5th Regime change')
+            plt.title(f"{Title} \nRecurrence Plot (ε = {epsilon:.3f}), RR: {percent/100} \nwith DET:{metrics['DET']:.3f}, LAM:{metrics['LAM']:.3f}, ENTR:{metrics['ENTR']:.3f}", fontsize=16)
+            plt.xlabel('Time index j')
+            plt.ylabel('Time index i')
+            plt.tight_layout()
+            plt.show()
 
     else:
         N = distance_matrix.shape[0]
@@ -162,26 +164,27 @@ def RecurrencePlot(all_vectors, percent, metric = 'euclidean', q=1, v_min=2 , l_
             R[neighbors, i] = 1
         metrics = rqa_metrics(R, l_min=l_min, v_min=v_min)
         np.fill_diagonal(R, 1)
-        plt.figure(figsize=(10,10))
-        plt.imshow(R, origin='lower', cmap='binary')
-        if lines:
-            '''
-            #plt.axvline(165, color='red', linestyle='dotted', label='1st Regime change')
-            plt.axvline(286-200, color='red', linestyle='dotted', label='2nd Regime change')
-            plt.axvline(376-200, color='red', linestyle='dotted', label='3rd Regime change')
-            plt.axvline(501-200, color='red', linestyle='dotted', label='4th Regime change')
-            plt.axvline(751-200, color='red', linestyle='dotted', label='5th Regime change')
-            
-            '''
-            plt.axvline(165, color='red', linestyle='dotted', label='1st Regime change')
-            plt.axvline(286, color='red', linestyle='dotted', label='2nd Regime change')
-            plt.axvline(376, color='red', linestyle='dotted', label='3rd Regime change')
-            plt.axvline(501, color='red', linestyle='dotted', label='4th Regime change')
-            plt.axvline(751, color='red', linestyle='dotted', label='5th Regime change')
-        plt.xlabel('time index')
-        plt.ylabel('time index')
-        plt.title(f"{Title} \nRecurrence Plot {percent}% Nearest Neighbors \nwith DET:{metrics['DET']:.3f}, LAM:{metrics['LAM']:.3f}, ENTR:{metrics['ENTR']:.3f}" , fontsize=16)
-        plt.show()
+        if plot:
+            plt.figure(figsize=(10,10))
+            plt.imshow(R, origin='lower', cmap='binary')
+            if lines:
+                '''
+                #plt.axvline(165, color='red', linestyle='dotted', label='1st Regime change')
+                plt.axvline(286-200, color='red', linestyle='dotted', label='2nd Regime change')
+                plt.axvline(376-200, color='red', linestyle='dotted', label='3rd Regime change')
+                plt.axvline(501-200, color='red', linestyle='dotted', label='4th Regime change')
+                plt.axvline(751-200, color='red', linestyle='dotted', label='5th Regime change')
+
+                '''
+                plt.axvline(165, color='red', linestyle='dotted', label='1st Regime change')
+                plt.axvline(286, color='red', linestyle='dotted', label='2nd Regime change')
+                plt.axvline(376, color='red', linestyle='dotted', label='3rd Regime change')
+                plt.axvline(501, color='red', linestyle='dotted', label='4th Regime change')
+                plt.axvline(751, color='red', linestyle='dotted', label='5th Regime change')
+            plt.xlabel('time index')
+            plt.ylabel('time index')
+            plt.title(f"{Title} \nRecurrence Plot {percent}% Nearest Neighbors \nwith DET:{metrics['DET']:.3f}, LAM:{metrics['LAM']:.3f}, ENTR:{metrics['ENTR']:.3f}" , fontsize=16)
+            plt.show()
     return metrics,distance_matrix   
       
     
@@ -189,40 +192,69 @@ def RecurrencePlot(all_vectors, percent, metric = 'euclidean', q=1, v_min=2 , l_
     
 
     
+def sliding_window_rqa(all_vectors, percent, metric='euclidean', q=1, window_size=100, step=1, l_min=2, v_min=2, globalEpsilon=True, window_position='middle'):
+    # for every time snapshots from (window size//2 to total time - window size//2) Make a window
+    # with the window run Recurrence plot function with other parameters given
+    # get that RP, and its metrics and add the metrics into arrays and repeat for every step of the time series 
+    # Return all the metric vs time series data
+    #All vectors shape = (time, space)
+    total_time = all_vectors.shape[0]
+    one_side = window_size//2
+    time_axis = range(one_side , total_time - one_side)
+    times, det_ts, lam_ts, entr_ts = [], [], [], []
+    for t in time_axis:
+        block = all_vectors[t - one_side : t + one_side,: ]
+        metrics,_ = RecurrencePlot(block, percent=percent, metric = metric, globalEpsilon=globalEpsilon)
+        det_ts.append(metrics['DET'])
+        lam_ts.append(metrics['LAM'])
+        entr_ts.append(metrics['ENTR'])  
+        times.append(t)
+    return np.array(times), det_ts, lam_ts, entr_ts
+        
+        
+'''
     
-def sliding_window_rqa(all_vectors, percent, metric='euclidean', q=1, window_size=100, step=1, l_min=2, v_min=2, globalEpsilon=True):
+    for 
     temp = all_vectors.copy()
     if q > 1:
         temp = downsample(temp, q)
     dist_mat = distance(temp, metric=metric)
-
     N = dist_mat.shape[0]
     half_w = window_size // 2
-    times = []
-    det_ts, lam_ts, entr_ts = [], [], []
-
     if globalEpsilon:
         eps = np.percentile(dist_mat, percent)
+    times, det_ts, lam_ts, entr_ts = [], [], [], []
 
-    for center in range(half_w, N-half_w, step):
-        i0, i1 = center-half_w, center+half_w
+    if window_position == 'middle':
+        centers = range(half_w, N - half_w, step)
+    elif window_position == 'right':
+        centers = range(window_size - 1, N, step)
+    else:
+        raise ValueError("window_position must be 'middle' or 'right'")
+
+    for center in centers:
+        if window_position == 'middle':
+            i0, i1 = center - half_w, center + half_w
+        else:  # 'right'
+            i0, i1 = center - window_size + 1, center + 1
+
         subDist = dist_mat[i0:i1, i0:i1]
         if globalEpsilon:
             R = (subDist <= eps).astype(int)
         else:
-            k = int((percent/100)*subDist.shape[0])
+            k = int((percent / 100) * subDist.shape[0])
             R = np.zeros_like(subDist, dtype=int)
             for i in range(subDist.shape[0]):
-                nbrs = np.argsort(subDist[i])[:k+1]
+                nbrs = np.argsort(subDist[i])[: k + 1]
                 nbrs = nbrs[nbrs != i][:k]
                 R[i, nbrs] = 1
                 R[nbrs, i] = 1
         np.fill_diagonal(R, 0)
-
         metrics = rqa_metrics(R, l_min=l_min, v_min=v_min)
         det_ts.append(metrics['DET'])
         lam_ts.append(metrics['LAM'])
-        entr_ts.append(metrics['ENTR'])
+        entr_ts.append(metrics['ENTR'])        
         times.append(center)
-
+# overlap of the dynamics time sample
     return np.array(times), det_ts, lam_ts, entr_ts
+'''
